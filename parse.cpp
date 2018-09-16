@@ -39,6 +39,9 @@ void parse(string& text, vector<Symbol>& parsed) {
             parsed.emplace_back(SymbolType::right);
             i++;
             break;
+        case ' ':
+            i++;
+            break;
         default:
             if(isDigit(text[i])) {
                 parsed.emplace_back(parseInt(text, i));
