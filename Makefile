@@ -1,4 +1,4 @@
-CFLAGS =  -Wall -g -std=c++11
+CFLAGS = -std=c++11
 
 main: parse.o TextCalculator.o
 	g++ parse.o TextCalculator.o -o main ${CFLAGS}
