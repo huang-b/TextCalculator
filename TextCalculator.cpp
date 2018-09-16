@@ -81,7 +81,7 @@ int calculate(vector<Symbol>& parsed) throw (string) {
     }
 }
 
-void main() {
+int main() {
     // input
     string text;
     getline(cin, text);
@@ -93,6 +93,6 @@ void main() {
         cout << calculate(parsed) << endl;
     } catch(string msg) {
         cout << msg << endl;
-        return;
+        return 0;
     }
 }
