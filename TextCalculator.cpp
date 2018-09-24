@@ -2,95 +2,65 @@
 #include<vector>
 #include<sstream>
 
+#include"Action.h"
 #include"TextCalculator.h"
 
 using namespace std;
 
-void operate(vector<int>& operandStack, vector<SymbolType>& operatorStack) throw (string) {
-    if(operandStack.size() < 2 || operatorStack.empty()) {
-        throw string("Invalid Expression");
-    }
-    int b = operandStack.back();
-    operandStack.pop_back();
-    int a = operandStack.back();
-    operandStack.pop_back();
-    SymbolType symbolType = operatorStack.back();
-    operatorStack.pop_back();
-    if(SymbolType::add == symbolType) {
-        operandStack.push_back(a + b);
-    } else if(SymbolType::sub == symbolType) {
-        operandStack.push_back(a - b);
-    } else if(SymbolType::mul == symbolType) {
-        operandStack.push_back(a * b);
-    } else {
-        throw string("Invalid Operation");
-    }
-}
+PushAction PUSH_ACTION;
+Action* PUSH = &PUSH_ACTION;
+ElimAction ELIM_ACTION;
+Action* ELIM = &ELIM_ACTION;
+PopAction POP_ACTION;
+Action* POP = &POP_ACTION;
+AccAction ACC_ACTION;
+Action* ACC = &ACC_ACTION;
 
-int calculate(vector<Symbol>& parsed) throw (string) {
+Action* table[][8] = {
+    //  E,    +,    -,    *,    (,    ),    =,    N
+    {NULL, PUSH, PUSH, PUSH, PUSH, NULL,  ACC, NULL}, // E
+    {NULL,  POP,  POP, PUSH, PUSH,  POP,  POP, NULL}, // +
+    {NULL,  POP,  POP, PUSH, PUSH,  POP,  POP, NULL}, // -
+    {NULL,  POP,  POP,  POP, PUSH,  POP,  POP, NULL}, // *
+    {NULL, PUSH, PUSH, PUSH, PUSH, ELIM, NULL, NULL}, // (
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, // )
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}, // =
+    {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}  // N
+};
+
+int TextCalculator::calculate(string& text) {
     vector<int> operandStack;
-    vector<SymbolType> operatorStack;
-    auto i = parsed.begin();
-    while(true) {
-        switch(i->symbolType) {
-        case SymbolType::add:
-        case SymbolType::sub:
-            if(operatorStack.empty() || SymbolType::left == operatorStack.back()) {
-                operatorStack.push_back(i->symbolType);
-                i++;
-            } else {
-                operate(operandStack, operatorStack);
-            }
-            break;
-        case SymbolType::mul:
-            if(!operatorStack.empty() && SymbolType::mul == operatorStack.back()) {
-                operate(operandStack, operatorStack);
-            } else {
-                operatorStack.push_back(i->symbolType);
-                i++;
-            }
-            break;
-        case SymbolType::left:
-            operatorStack.push_back(i->symbolType);
-            i++;
-            break;
-        case SymbolType::right:
-            if(operatorStack.empty()) {
-                throw string("Unmatch Bracket");
-            } else if(SymbolType::left == operatorStack.back()) {
-                operatorStack.pop_back();
-                i++;
-            } else {
-                operate(operandStack, operatorStack);
-            }
-            break;
-        case SymbolType::eql:
-            if(operatorStack.empty()) {
-                return operandStack.back();
-            } else if(SymbolType::left == operatorStack.back()) {
-                throw string("Invalid Expression.");
-            } else {
-                operate(operandStack, operatorStack);
-            }
-            break;
-        case num:
-            operandStack.push_back(i->value);
-            i++;
-            break;
+    vector<Operator*> operatorStack;
+    QuietOperator empOperator(SymbolType::emp);
+    operatorStack.push_back(&empOperator);
+    Parser parser(text);
+    while(parser.hasNext()) {
+        Symbol symbol = parser.next();
+        if(symbol.isNum()) {
+            operandStack.push_back(symbol.toNum());
+            continue;
         }
+        Operator* nextOperator = symbol.toOperator();
+        Action* action = NULL;
+        do {
+            action = table[operatorStack.back()->getSymbolType()]
+                    [nextOperator->getSymbolType()];
+            if(NULL == action) {
+                throw string("Invalid Expression");
+            }
+        } while(action->act(operatorStack, nextOperator, operandStack));
     }
+    return operandStack.back();
 }
 
 void main() {
     // input
     string text;
     getline(cin, text);
+    // calculate
+    TextCalculator calculator;
     try {
-        vector<Symbol> parsed;
-        // parse
-        parse(text, parsed);
-        // calculate
-        cout << calculate(parsed) << endl;
+        cout << calculator.calculate(text) << endl;
     } catch(string msg) {
         cout << msg << endl;
         return;
