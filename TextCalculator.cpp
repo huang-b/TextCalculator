@@ -6,79 +6,40 @@
 
 using namespace std;
 
-void operate(vector<int>& operandStack, vector<SymbolType>& operatorStack) throw (string) {
-    if(operandStack.size() < 2 || operatorStack.empty()) {
-        throw string("Invalid Expression");
-    }
-    int b = operandStack.back();
-    operandStack.pop_back();
-    int a = operandStack.back();
-    operandStack.pop_back();
-    SymbolType symbolType = operatorStack.back();
-    operatorStack.pop_back();
-    if(SymbolType::add == symbolType) {
-        operandStack.push_back(a + b);
-    } else if(SymbolType::sub == symbolType) {
-        operandStack.push_back(a - b);
-    } else if(SymbolType::mul == symbolType) {
-        operandStack.push_back(a * b);
-    } else {
-        throw string("Invalid Operation");
-    }
-}
-
-int calculate(vector<Symbol>& parsed) throw (string) {
-    vector<int> operandStack;
-    vector<SymbolType> operatorStack;
-    auto i = parsed.begin();
+int parseExpression(vector<Symbol>& symbols, int &i) {
+    int value = parseItem(symbols, i);
     while(true) {
-        switch(i->symbolType) {
-        case SymbolType::add:
-        case SymbolType::sub:
-            if(operatorStack.empty() || SymbolType::left == operatorStack.back()) {
-                operatorStack.push_back(i->symbolType);
-                i++;
-            } else {
-                operate(operandStack, operatorStack);
-            }
-            break;
-        case SymbolType::mul:
-            if(!operatorStack.empty() && SymbolType::mul == operatorStack.back()) {
-                operate(operandStack, operatorStack);
-            } else {
-                operatorStack.push_back(i->symbolType);
-                i++;
-            }
-            break;
-        case SymbolType::left:
-            operatorStack.push_back(i->symbolType);
-            i++;
-            break;
-        case SymbolType::right:
-            if(operatorStack.empty()) {
-                throw string("Unmatch Bracket");
-            } else if(SymbolType::left == operatorStack.back()) {
-                operatorStack.pop_back();
-                i++;
-            } else {
-                operate(operandStack, operatorStack);
-            }
-            break;
-        case SymbolType::eql:
-            if(operatorStack.empty()) {
-                return operandStack.back();
-            } else if(SymbolType::left == operatorStack.back()) {
-                throw string("Invalid Expression.");
-            } else {
-                operate(operandStack, operatorStack);
-            }
-            break;
-        case num:
-            operandStack.push_back(i->value);
-            i++;
+        if(SymbolType::add == symbols[i].symbolType) {
+            value += parseItem(symbols, ++i);
+        } else if(SymbolType::sub == symbols[i].symbolType) {
+            value -= parseItem(symbols, ++i);
+        } else {
             break;
         }
     }
+    return value;
+}
+
+int parseItem(vector<Symbol>& symbols, int &i) {
+    int value = parseFactor(symbols, i);
+    while(SymbolType::mul == symbols[i].symbolType) {
+        value *= parseFactor(symbols, ++i);
+    }
+    return value;
+}
+int parseFactor(vector<Symbol>& symbols, int &i) {
+    if(SymbolType::num == symbols[i].symbolType) {
+        return symbols[i++].value;
+    }
+    if(SymbolType::left != symbols[i].symbolType) {
+        throw string("Expect '('");
+    }
+    int value = parseExpression(symbols, ++i);
+    if(SymbolType::right != symbols[i].symbolType) {
+        throw string("Expect ')'");
+    }
+    ++i;
+    return value;
 }
 
 void main() {
@@ -86,11 +47,12 @@ void main() {
     string text;
     getline(cin, text);
     try {
-        vector<Symbol> parsed;
+        vector<Symbol> symbols;
         // parse
-        parse(text, parsed);
+        parse(text, symbols);
         // calculate
-        cout << calculate(parsed) << endl;
+        int i = 0;
+        cout << parseExpression(symbols, i) << endl;
     } catch(string msg) {
         cout << msg << endl;
         return;

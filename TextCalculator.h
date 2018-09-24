@@ -14,5 +14,9 @@ struct Symbol {
 };
 
 void parse(string &text, vector<Symbol>& parsed);
+int parseExpression(vector<Symbol>& symbols, int &i);
+int parseItem(vector<Symbol>& symbols, int &i);
+int parseFactor(vector<Symbol>& symbols, int &i);
+
 
 #endif
