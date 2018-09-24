@@ -1,18 +1,22 @@
-#include<string>
-using namespace std;
 #ifndef TEXT_CALCULATOR
 #define TEXT_CALCULATOR
-enum SymbolType {
-    add, sub, mul, left, right, eql, num
-};
 
-struct Symbol {
-    SymbolType symbolType;
-    int value;
-    Symbol(SymbolType st): symbolType(st), value(0) {}
-    Symbol(int v): symbolType(SymbolType::num), value(v) {}
-};
+#include<string>
 
-void parse(string &text, vector<Symbol>& parsed);
+using namespace std;
+
+inline bool isDigit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+inline int parseInt(string &text, unsigned int &i) {
+    int num = 0;
+    do {
+        num = num * 10 + text[i++] - '0';
+    } while(i < text.size() && isDigit(text[i]));
+    return num;
+}
+
+string parse(string &text);
 
 #endif

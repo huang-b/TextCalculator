@@ -1,59 +1,73 @@
 #include<iostream>
 #include<sstream>
 #include<vector>
+
 #include"TextCalculator.h"
 
-inline bool isDigit(char c) {
-    return c >= '0' && c <= '9';
-}
+using namespace std;
 
-inline int parseInt(string &text, unsigned int &i) {
-    int num = 0;
-    do {
-        num = num * 10 + text[i++] - '0';
-    } while(i < text.size() && isDigit(text[i]));
-    return num;
-}
-
-void parse(string& text, vector<Symbol>& parsed) {
+string parse(string& text) {
+    stringstream parsedStream;
+    vector<char> operatorStack;
     unsigned int i = 0;
     while(i < text.size()) {
         switch(text[i]) {
         case '+':
-            parsed.emplace_back(SymbolType::add);
-            i++;
-            break;
         case '-':
-            parsed.emplace_back(SymbolType::sub);
-            i++;
+            if(operatorStack.empty() || '(' == operatorStack.back()) {
+                operatorStack.push_back(text[i++]);
+            } else {
+                parsedStream << operatorStack.back() << ' ';
+                operatorStack.pop_back();
+            }
             break;
         case '*':
-            parsed.emplace_back(SymbolType::mul);
-            i++;
+            if(!operatorStack.empty() && '*' == operatorStack.back()) {
+                parsedStream << operatorStack.back() << ' ';
+                operatorStack.pop_back();
+            } else {
+                operatorStack.push_back(text[i++]);
+            }
             break;
         case '(':
-            parsed.emplace_back(SymbolType::left);
-            i++;
+            operatorStack.push_back(text[i++]);
             break;
         case ')':
-            parsed.emplace_back(SymbolType::right);
-            i++;
+            if(operatorStack.empty()) {
+                throw string("Unmatch ')'");
+            }
+            if('(' == operatorStack.back()) {
+                i++;
+            } else {
+                 parsedStream << operatorStack.back() << ' ';
+            }
+            operatorStack.pop_back();
             break;
         case ' ':
             i++;
             break;
         default:
-            if(isDigit(text[i])) {
-                parsed.emplace_back(parseInt(text, i));
-            } else {
+             if(!isDigit(text[i])) {
                 stringstream msg;
                 msg << "Invalid Character: " << text[i] << " at " << i;
                 throw msg.str();
             }
-        }
-        if(parsed.empty()) {
-            throw "Empty Expression";
+            do {
+                parsedStream << text[i++];
+            } while(i < text.size() && isDigit(text[i]));
+            parsedStream << ' ';
         }
     }
-    parsed.emplace_back(SymbolType::eql);
+    while(!operatorStack.empty()) {
+        if('(' == operatorStack.back()) {
+            throw string("Unmatch '('");
+        }
+        parsedStream << operatorStack.back() << ' ';
+        operatorStack.pop_back();
+    }
+    string parsed = parsedStream.str();
+    if(parsed.empty()) {
+        throw "Empty Expression";
+    }
+    return parsed;
 }
