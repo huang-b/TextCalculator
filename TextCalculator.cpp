@@ -55,11 +55,6 @@ int calculate(string& reversePoland) {
 }
 
 void main() {
-    // init
-    map<char, int> priorities;
-    priorities['+'] = 0;
-    priorities['-'] = 0;
-    priorities['*'] = 1;
     // input
     string text;
     getline(cin, text);
